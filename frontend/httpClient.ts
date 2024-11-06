@@ -40,7 +40,15 @@ export class HttpClient {
       })
     );
   }
-
+  async post(url: string, body: unknown) {
+    return this.result(
+      await fetch(this.resolve(url), {
+        method: 'POST',
+        headers: this.getHeaders(),
+        body: JSON.stringify(body)
+      })
+    );
+  }
   async patch(url: string, body: unknown) {
     return this.result(
       await fetch(this.resolve(url), {

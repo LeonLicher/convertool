@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useHttpClient } from "../../contexts/HttpClientContext";
 import './player-guess.scss';
 
@@ -38,8 +38,6 @@ export function PlayerGuess() {
     const [filteredPlayers, setFilteredPlayers] = useState<Player[]>([]);
     const [gameWon, setGameWon] = useState(false);
     const httpClient = useHttpClient();
-
-    const targetPlayerId = "237"; // Manuel Neuer
 
     useEffect(() => {
         const fetchPlayers = async () => {
@@ -82,57 +80,32 @@ export function PlayerGuess() {
         return (value / 1000000).toFixed(1) + 'M €';
     };
 
-    const checkGuess = (guessedPlayer: Player): Guess['matches'] => {
-        const targetPlayer = playerData?.players[targetPlayerId];
-        if (!targetPlayer) return {
-            name: false,
-            teamName: false,
-            position: false,
-            marketValue: null,
-            number: false,
-            points: null
-        };
-
-        let marketValueMatch: 'higher' | 'lower' | 'correct';
-        if (guessedPlayer.marketValue === targetPlayer.marketValue) {
-            marketValueMatch = 'correct';
-        } else if (guessedPlayer.marketValue > targetPlayer.marketValue) {
-            marketValueMatch = 'higher';
-        } else {
-            marketValueMatch = 'lower';
-        }
-        let pointsMatch: 'higher' | 'lower' | 'correct';
-        if (guessedPlayer.totalPoints === targetPlayer.totalPoints) {
-            pointsMatch = 'correct';
-        } else if (guessedPlayer.totalPoints > targetPlayer.totalPoints) {
-            pointsMatch = 'higher';
-        } else {
-            pointsMatch = 'lower';
-        }
-
-        return {
-            name: guessedPlayer.name === targetPlayer.name,
-            teamName: guessedPlayer.teamName === targetPlayer.teamName,
-            position: guessedPlayer.position === targetPlayer.position,
-            marketValue: marketValueMatch,
-            number: guessedPlayer.number === targetPlayer.number,
-            points: pointsMatch
-        };
-    };
-
-    const handlePlayerSelect = (player: Player) => {
+    const handlePlayerSelect = async (player: Player) => {
         if (guesses.some(guess => guess.player.id === player.id)) {
             return; // Prevent duplicate guesses
         }
 
-        const matches = checkGuess(player);
-        const newGuess: Guess = { player, matches };
-        setGuesses([...guesses, newGuess]);
-        setSearchTerm('');
-        setFilteredPlayers([]);
+        try {
+            const response = await httpClient.post('http://localhost:8080/makeGuess', {
+                playerId: player.id
+            });
+            const data = await response.json();
 
-        if (player.id === targetPlayerId) {
-            setGameWon(true);
+            const newGuess: Guess = {
+                player : data.guessedPlayer,
+                matches: data.matches
+            };
+            
+            setGuesses([...guesses, newGuess]);
+            setSearchTerm('');
+            setFilteredPlayers([]);
+
+            if (data.isCorrect) {
+                setGameWon(true);
+            }
+        } catch (error) {
+            console.error('Failed to make guess:', error);
+            // Add error handling UI if needed
         }
     };
 
@@ -168,7 +141,7 @@ export function PlayerGuess() {
 
             <div className="guesses-container">
                 <div className="guess-row header">
-                    <div className="guess-cell">Name</div>
+                    {/* <div className="guess-cell">Name</div> */}
                     <div className="guess-cell">Team</div>
                     <div className="guess-cell">Pos</div>
                     <div className="guess-cell">Value</div>
@@ -177,9 +150,9 @@ export function PlayerGuess() {
                 </div>
                 {guesses.map((guess, index) => (
                     <div key={index} className="guess-row">
-                        <div className={`guess-cell ${guess.matches.name ? 'correct' : 'incorrect'}`}>
+                        {/* <div className={`guess-cell ${guess.matches.name ? 'correct' : 'incorrect'}`}>
                             {guess.player.name}
-                        </div>
+                        </div> */}
                         <div className={`guess-cell ${guess.matches.teamName ? 'correct' : 'incorrect'}`}>
                             {guess.player.teamName}
                         </div>
@@ -211,7 +184,7 @@ export function PlayerGuess() {
 
             {gameWon && (
                 <div className="victory-message">
-                    Congratulations! You found Manuel Neuer!
+                    Congratulations! You found the player!
                 </div>
             )}
         </div>
