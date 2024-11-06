@@ -1,0 +1,13 @@
+{
+  "players": {
+    "1": {
+      "id": 1,
+      "name": "Test Player",
+      "teamId": 1,
+      "teamName": "Test Team"
+    }
+  },
+  "valid_team_ids": [
+    1
+  ]
+}
